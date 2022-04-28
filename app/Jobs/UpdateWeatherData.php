@@ -10,6 +10,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Log\LogManager;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
@@ -17,6 +18,7 @@ class UpdateWeatherData
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private LogManager $logger;
     private WeatherDataSourceInterface $dataSource;
     private WeatherDataRepositoryInterface $dataRepository;
 
@@ -25,8 +27,9 @@ class UpdateWeatherData
      *
      * @return void
      */
-    public function __construct(WeatherDataSourceInterface $dataSource, WeatherDataRepositoryInterface $dataRepository)
+    public function __construct(Logmanager $logger, WeatherDataSourceInterface $dataSource, WeatherDataRepositoryInterface $dataRepository)
     {
+        $this->logger = $logger;
         $this->dataSource = $dataSource;
         $this->dataRepository = $dataRepository;
     }
@@ -38,29 +41,37 @@ class UpdateWeatherData
      */
     public function handle()
     {
-        \Log::info('Start updating weather data');
+        $this->logger->info('Start updating weather data');
 
         try
         {
-            /** @var Location[] $locations */
-            $locations = Location::all();
-            foreach($locations as $location)
-            {
-                $data = $this->dataSource->getWeatherData($location->lat, $location->lon);
-
-                foreach($data as $dataPoint)
-                {
-                    $this->dataRepository->storeDataPoint($location->id, $dataPoint);
-                }
-            }
+            $this->doUpdateWeatherData();
 
             WeatherUpdated::dispatch();
         }
         catch(\Exception $ex)
         {
-            \Log::error('Error while updating weather data: ' . $ex);
+            $this->logger->error('Error while updating weather data: ' . $ex);
         }
 
-        \Log::info('Finish updating weather data');
+        $this->logger->info('Finish updating weather data');
+    }
+
+    /**
+     * @return void
+     */
+    public function doUpdateWeatherData(): void
+    {
+        /** @var Location[] $locations */
+        $locations = Location::all();
+        foreach($locations as $location)
+        {
+            $data = $this->dataSource->getWeatherData($location->lat, $location->lon);
+
+            foreach($data as $dataPoint)
+            {
+                $this->dataRepository->storeDataPoint($location->id, $dataPoint);
+            }
+        }
     }
 }
