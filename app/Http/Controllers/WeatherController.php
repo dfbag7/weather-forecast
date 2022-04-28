@@ -24,20 +24,9 @@ class WeatherController extends Controller
     public function get(Request $request)
     {
         $validated = $request->validate([
-            'city' => [
-                'required',
-                function($attribute, $value, $fail) {
-                    if (Location::where('name', $value)->get() === null)
-                        $fail("The $attribute must contain a valid city name");
-                }
-            ],
-            'timestamp' => [
-                'required',
-                function($attribute, $value, $fail) {
-                    if(!Carbon::createFromFormat(DATE_ATOM, $value))
-                        $fail("The $attribute must contain a timestamp in ISO-8601 format");
-                }]
-            ]);
+            'city' => [ 'required', 'exists:locations,name' ],
+            'timestamp' => [ 'required', 'date_format:' . DATE_ATOM, ]
+        ]);
 
         $timestamp = Carbon::createFromFormat(DATE_ATOM, $validated['timestamp']);
 
