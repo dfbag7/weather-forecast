@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property int $location_id
- * @property string $forecast_timestamp
+ * @property \Illuminate\Support\Carbon|null $forecast_timestamp
  * @property float $temp_min
  * @property float $temp_max
  * @property float $pressure
@@ -35,6 +35,10 @@ use Illuminate\Database\Eloquent\Model;
 class Forecast extends Model
 {
     use HasFactory;
+
+    protected $casts = [
+        'forecast_timestamp' => 'datetime',
+    ];
 
     public function location()
     {
