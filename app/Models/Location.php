@@ -28,4 +28,9 @@ use Illuminate\Database\Eloquent\Model;
 class Location extends Model
 {
     use HasFactory;
+
+    public function forecasts()
+    {
+        return $this->hasMany(Forecast::class, 'location_id', 'id');
+    }
 }
