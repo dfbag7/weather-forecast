@@ -13,7 +13,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 
-class UpdateWeatherData implements ShouldQueue
+class UpdateWeatherData
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -38,18 +38,29 @@ class UpdateWeatherData implements ShouldQueue
      */
     public function handle()
     {
-        /** @var Location[] $locations */
-        $locations = Location::all();
-        foreach($locations as $location)
-        {
-            $data = $this->dataSource->getWeatherData($location->lat, $location->lon);
+        \Log::info('Start updating weather data');
 
-            foreach($data as $dataPoint)
+        try
+        {
+            /** @var Location[] $locations */
+            $locations = Location::all();
+            foreach($locations as $location)
             {
-                $this->dataRepository->storeDataPoint($location->id, $dataPoint);
+                $data = $this->dataSource->getWeatherData($location->lat, $location->lon);
+
+                foreach($data as $dataPoint)
+                {
+                    $this->dataRepository->storeDataPoint($location->id, $dataPoint);
+                }
             }
+
+            WeatherUpdated::dispatch();
+        }
+        catch(\Exception $ex)
+        {
+            \Log::error('Error while updating weather data: ' . $ex);
         }
 
-        WeatherUpdated::dispatch();
+        \Log::info('Finish updating weather data');
     }
 }
